@@ -232,23 +232,34 @@ namespace Sitecore.Support.Forms.Shell.UI.Controls
                     cookieContainer1.Add(cookie);
                 }
 
+                #region Added code
+                //start of the modified part
                 HttpContext httpContext = HttpContext.Current;
                 string authHeader = httpContext.Request.Headers["Authorization"];
 
                 if (authHeader != null && authHeader.StartsWith("Basic"))
                 {
+                  //code is used when the Basic authentication is enabled (via IIS)
                   string encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
+
                   Encoding encoding = Encoding.GetEncoding("iso-8859-1");
                   string usernamePassword = encoding.GetString(System.Convert.FromBase64String(encodedUsernamePassword));
+
                   int separatorIndex = usernamePassword.IndexOf(':');
+
                   var username = usernamePassword.Substring(0, separatorIndex);
                   var password = usernamePassword.Substring(separatorIndex + 1);
+
                     cookieContainer.Credentials = new NetworkCredential(username, password);
                 }
                 else
                 {
+                    //code is used to overcome the issue when the Windows Authentication is enabled
+                    //for now, it is used along with anonymous authentication enabled.
                     cookieContainer.Credentials = CredentialCache.DefaultCredentials;
                 }
+                // end of the modified part
+                #endregion
 
                 StreamReader streamReader = new StreamReader(((HttpWebResponse)cookieContainer.GetResponse()).GetResponseStream());
                 HtmlDocument htmlDocument = new HtmlDocument();
