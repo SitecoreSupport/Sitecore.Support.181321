@@ -28,6 +28,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI;
@@ -230,6 +231,25 @@ namespace Sitecore.Support.Forms.Shell.UI.Controls
                     };
                     cookieContainer1.Add(cookie);
                 }
+
+                HttpContext httpContext = HttpContext.Current;
+                string authHeader = httpContext.Request.Headers["Authorization"];
+
+                if (authHeader != null && authHeader.StartsWith("Basic"))
+                {
+                  string encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
+                  Encoding encoding = Encoding.GetEncoding("iso-8859-1");
+                  string usernamePassword = encoding.GetString(System.Convert.FromBase64String(encodedUsernamePassword));
+                  int separatorIndex = usernamePassword.IndexOf(':');
+                  var username = usernamePassword.Substring(0, separatorIndex);
+                  var password = usernamePassword.Substring(separatorIndex + 1);
+                    cookieContainer.Credentials = new NetworkCredential(username, password);
+                }
+                else
+                {
+                    cookieContainer.Credentials = CredentialCache.DefaultCredentials;
+                }
+
                 StreamReader streamReader = new StreamReader(((HttpWebResponse)cookieContainer.GetResponse()).GetResponseStream());
                 HtmlDocument htmlDocument = new HtmlDocument();
                 using (ThreadCultureSwitcher threadCultureSwitcher = new ThreadCultureSwitcher(Language.Parse("en").CultureInfo))
